@@ -15,6 +15,10 @@ class NotMatchingNamespaceValue(Exception):
     pass
 
 
+class UnknownNamespace(Exception):
+    pass
+
+
 def split_namespace_value(string):
     pattern = re.compile(r'(?P<namespace>[^:]+):(?P<value>\w+)')
     matches = pattern.search(string)
@@ -24,16 +28,23 @@ def split_namespace_value(string):
     namespace, value = matches.group('namespace'), matches.group('value')
 
     if not hasattr(rdflib.namespace, namespace.upper()):
-        raise Exception(f'Unknown namespace: {namespace}')
+        raise UnknownNamespace(f'{namespace}')
 
     return getattr(rdflib.namespace, namespace.upper()), value
 
 
-def get_uri(string):
+def get_uri(string, force=True):
     try:
         namespace, value = split_namespace_value(string)
     except NotMatchingNamespaceValue:
-        return DEFAULT_NAMESPACE[string]
+        if force:
+            return DEFAULT_NAMESPACE[string]
+        return None
+    except UnknownNamespace as e:
+        if not force:
+            return None
+        raise e
+
     return namespace[value]
 
 
@@ -60,11 +71,11 @@ def handle_classes(graph, classes_file, delimiter=','):
             if index == 0 or not field_value:
                 continue
             class_uri = existing_classes[class_row[0]]
-            print(index, field_names[index])
             if field_names[index] == 'superClass':
                 graph.add((class_uri, RDFS.subClassOf, get_uri(field_value)))
             else:
-                graph.add((class_uri, get_uri(field_names[index]), rdflib.Literal(field_value)))
+                value = get_uri(field_value, force=False) or rdflib.Literal(field_value)
+                graph.add((class_uri, get_uri(field_names[index]), value))
 
 
 def handle_properties(graph, properties_file, delimiter=','):
@@ -84,7 +95,8 @@ def handle_properties(graph, properties_file, delimiter=','):
             if field_names[index] == 'superProperties':
                 graph.add((current_property, RDFS.subPropertyOf, get_uri(field_value)))
             else:
-                graph.add((current_property, get_uri(field_names[index]), rdflib.Literal(field_value)))
+                value = get_uri(field_value, force=False) or rdflib.Literal(field_value)
+                graph.add((current_property, get_uri(field_names[index]), value))
 
 
 @click.command()
