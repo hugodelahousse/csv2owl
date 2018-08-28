@@ -5,6 +5,7 @@ import click
 import csv
 
 import rdflib
+import sys
 from rdflib.namespace import RDF, RDFS, OWL, SKOS
 
 DEFAULT_NAMESPACE = SKOS
@@ -65,6 +66,7 @@ def handle_classes(graph, classes_file, delimiter=','):
             else:
                 graph.add((class_uri, get_uri(field_names[index]), rdflib.Literal(field_value)))
 
+
 def handle_properties(graph, properties_file, delimiter=','):
     properties_reader = csv.reader(properties_file, delimiter=delimiter)
     field_names = next(properties_reader)
@@ -85,18 +87,19 @@ def handle_properties(graph, properties_file, delimiter=','):
                 graph.add((current_property, get_uri(field_names[index]), rdflib.Literal(field_value)))
 
 
-
 @click.command()
 @click.argument('classes', type=click.File('r'))
 @click.argument('properties', type=click.File('r'))
-@click.option('--delimiter', default=',', help='CSV delimiter character')
-@click.option('--config', default=None, help='Config file path')
-def csv2owl(classes, properties, delimiter, config):
+@click.option('--delimiter', '-d', default=',', help='CSV delimiter character')
+@click.option('--config', '-c', default=None, help='Config file path')
+@click.option('--output', '-o', default=sys.stdout, help='Output file', type=click.File('w'))
+@click.option('--format', '-f', default='json-ld', help='Output format')
+def csv2owl(classes, properties, delimiter, config, output, format):
     graph = rdflib.Graph()
     setup_graph(graph, config)
     handle_classes(graph, classes, delimiter)
     handle_properties(graph, properties, delimiter)
-    print(graph.serialize(format='json-ld', indent=4).decode('utf8'))
+    print(graph.serialize(format=format, indent=4).decode('utf8'), file=output)
     pass
 
 
