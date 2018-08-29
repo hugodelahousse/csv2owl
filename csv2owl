@@ -8,7 +8,7 @@ import rdflib
 import sys
 from rdflib.namespace import RDF, RDFS, OWL, SKOS
 
-DEFAULT_NAMESPACE = SKOS
+DEFAULT_NAMESPACE = RDFS
 
 
 class NotMatchingNamespaceValue(Exception):
@@ -85,11 +85,10 @@ def handle_properties(graph, properties_file, delimiter=','):
 
     current_property = None
     for property_row in property_rows:
-        for index, field_value, in enumerate(property_row):
-            if index == 0:
-                current_property = get_uri(field_value)
-                graph.add((current_property, RDF.type, OWL.ObjectProperty))
-                continue
+        current_property = get_uri(property_row[0])
+        property_type = get_uri(property_row[1])
+        graph.add((current_property, RDF.type, property_type))
+        for index, field_value, in enumerate(property_row[2:], 2):
             if not field_value:
                 continue
             if field_names[index] == 'superProperties':
