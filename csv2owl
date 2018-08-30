@@ -87,6 +87,9 @@ def handle_file(graph, f, file_type, delimiter=','):
                 continue
             force_uri = field_names[index] not in ['label', 'comment']
 
+            lang = None
+            if field_names[index][-3] == '@':
+                lang = field_names[index][-2:]
 
             value = get_uri(field_value, force=force_uri) or rdflib.Literal(field_value, lang=lang)
             graph.add((current, get_uri(field_names[index]), value))
