@@ -40,6 +40,8 @@ def split_namespace_value(string):
 
 def get_uri(string, force=True):
     string = string.strip()
+    if ' ' in string:
+        return None
     try:
         namespace, value = split_namespace_value(string)
     except NotMatchingNamespaceValue:
