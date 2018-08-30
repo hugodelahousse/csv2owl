@@ -73,41 +73,23 @@ def handle_prefix(prefix_file, delimiter=','):
             DEFAULT_NAMESPACE = namespace
 
 
-def handle_classes(graph, classes_file, delimiter=','):
-    class_reader = csv.reader(classes_file, delimiter=delimiter)
-    field_names = next(class_reader)
-    class_rows = list(class_reader)
+def handle_file(graph, f, file_type, delimiter=','):
+    file_reader = csv.reader(f, delimiter=delimiter)
+    field_names = next(file_reader)
+    type_rows = list(file_reader)
 
-    existing_classes = {}
-    # Create all the classes
-    for class_row in class_rows:
-        class_uri = get_uri(class_row[0])
-
-        existing_classes[class_row[0]] = class_uri
-        graph.add((class_uri, RDF.type, OWL.Class))
-
-    for class_row in class_rows:
-        for index, field_value in enumerate(class_row):
-            if index == 0 or not field_value:
-                continue
-            class_uri = existing_classes[class_row[0]]
-            value = get_uri(field_value, force=False) or rdflib.Literal(field_value)
-            graph.add((class_uri, get_uri(field_names[index]), value))
-
-
-def handle_properties(graph, properties_file, delimiter=','):
-    properties_reader = csv.reader(properties_file, delimiter=delimiter)
-    field_names = next(properties_reader)
-    property_rows = list(properties_reader)
-
-    current_property = None
-    for property_row in property_rows:
-        current_property = get_uri(property_row[0])
-        for index, field_value, in enumerate(property_row[1:], 1):
+    current_value = None
+    for row in type_rows:
+        current = get_uri(row[0])
+        for index, field_value, in enumerate(row[1:], 1):
+            field_value = field_value.strip()
             if not field_value:
                 continue
-            value = get_uri(field_value, force=False) or rdflib.Literal(field_value)
-            graph.add((current_property, get_uri(field_names[index]), value))
+            force_uri = field_names[index] not in ['label', 'comment']
+
+
+            value = get_uri(field_value, force=force_uri) or rdflib.Literal(field_value, lang=lang)
+            graph.add((current, get_uri(field_names[index]), value))
 
 
 @click.command()
@@ -123,8 +105,8 @@ def csv2owl(classes, properties, prefix, delimiter, config, output, format):
     if prefix:
         handle_prefix(prefix, delimiter)
     setup_graph(graph, config)
-    handle_classes(graph, classes, delimiter)
-    handle_properties(graph, properties, delimiter)
+    handle_file(graph, classes, 'classes', delimiter)
+    handle_file(graph, properties, 'properties', delimiter)
     print(graph.serialize(format=format, indent=4).decode('utf8'), file=output)
     pass
 
