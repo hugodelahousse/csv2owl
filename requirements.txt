@@ -1,0 +1,4 @@
+click
+rdflib
+rdflib-jsonld
+pyforms
