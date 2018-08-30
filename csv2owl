@@ -39,6 +39,7 @@ def split_namespace_value(string):
 
 
 def get_uri(string, force=True):
+    string = string.strip()
     try:
         namespace, value = split_namespace_value(string)
     except NotMatchingNamespaceValue:
@@ -63,6 +64,7 @@ def handle_prefix(prefix_file, delimiter=','):
     prefix_reader = csv.reader(prefix_file, delimiter=delimiter)
 
     for row in prefix_reader:
+        row = [field.strip() for field in row]
         namespace = rdflib.Namespace(row[2])
         NAMESPACES[row[1].upper()] = namespace
         if 'default' in row[0]:
