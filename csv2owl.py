@@ -81,6 +81,8 @@ def handle_file(graph, f, file_type, delimiter=','):
     current_value = None
     for row in type_rows:
         current = get_uri(row[0])
+        if file_type == 'classes':
+            graph.add((current, RDF.type, OWL.Class))
         for index, field_value, in enumerate(row[1:], 1):
             field_value = field_value.strip()
             if not field_value:
