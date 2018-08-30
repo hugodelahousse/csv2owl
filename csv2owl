@@ -9,6 +9,7 @@ import sys
 from rdflib.namespace import RDF, RDFS, OWL, SKOS
 
 DEFAULT_NAMESPACE = RDFS
+NAMESPACES = {}
 
 
 class NotMatchingNamespaceValue(Exception):
@@ -20,17 +21,21 @@ class UnknownNamespace(Exception):
 
 
 def split_namespace_value(string):
-    pattern = re.compile(r'(?P<namespace>[^:]+):(?P<value>\w+)')
+    pattern = re.compile(r'\s*(?P<namespace>[^:]+):(?P<value>\w+)\s*')
     matches = pattern.search(string)
     if not matches:
         raise NotMatchingNamespaceValue(f'{string} does not match namespace:value')
 
     namespace, value = matches.group('namespace'), matches.group('value')
+    namespace = namespace.upper()
 
-    if not hasattr(rdflib.namespace, namespace.upper()):
-        raise UnknownNamespace(f'{namespace}')
+    if namespace in NAMESPACES.keys():
+        return NAMESPACES[namespace], value
+    elif hasattr(rdflib.namespace, namespace.upper()):
+        return getattr(rdflib.namespace, namespace.upper()), value
+    else:
+        raise UnknownNamespace(f'\'{namespace}\'')
 
-    return getattr(rdflib.namespace, namespace.upper()), value
 
 
 def get_uri(string, force=True):
@@ -51,6 +56,17 @@ def get_uri(string, force=True):
 def setup_graph(graph, config):
     graph.bind("owl", OWL)
     graph.bind("skos", SKOS)
+
+
+def handle_prefix(prefix_file, delimiter=','):
+    global DEFAULT_NAMESPACE
+    prefix_reader = csv.reader(prefix_file, delimiter=delimiter)
+
+    for row in prefix_reader:
+        namespace = rdflib.Namespace(row[2])
+        NAMESPACES[row[1].upper()] = namespace
+        if 'default' in row[0]:
+            DEFAULT_NAMESPACE = namespace
 
 
 def handle_classes(graph, classes_file, delimiter=','):
@@ -101,13 +117,16 @@ def handle_properties(graph, properties_file, delimiter=','):
 @click.command()
 @click.argument('classes', type=click.File('r'))
 @click.argument('properties', type=click.File('r'))
+@click.option('--prefix', '-p', default=None, help='Prefix CSV File', type=click.File('r'))
 @click.option('--delimiter', '-d', default=',', help='CSV delimiter character')
 @click.option('--config', '-c', default=None, help='Config file path')
 @click.option('--output', '-o', default=sys.stdout, help='Output file', type=click.File('w'))
 @click.option('--format', '-f', default='json-ld', help='Output format')
-def csv2owl(classes, properties, delimiter, config, output, format):
+def csv2owl(classes, properties, prefix, delimiter, config, output, format):
     graph = rdflib.Graph()
     setup_graph(graph, config)
+    if prefix:
+        handle_prefix(prefix, delimiter)
     handle_classes(graph, classes, delimiter)
     handle_properties(graph, properties, delimiter)
     print(graph.serialize(format=format, indent=4).decode('utf8'), file=output)
