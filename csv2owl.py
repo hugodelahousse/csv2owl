@@ -56,7 +56,7 @@ def get_uri(string, force=True):
     return namespace[value]
 
 
-def setup_graph(graph, config):
+def setup_graph(graph):
     for namespace, uri in NAMESPACES.items():
         graph.bind(namespace.lower(), uri)
 
@@ -94,25 +94,29 @@ def handle_file(graph, f, file_type, delimiter=','):
             value = get_uri(field_value, force=force_uri) or rdflib.Literal(field_value, lang=lang)
             graph.add((current, get_uri(field_names[index]), value))
 
+def csv2owl(classes, properties, prefix, delimiter=','):
+    graph = rdflib.Graph()
+
+    if prefix:
+        handle_prefix(prefix, delimiter)
+    setup_graph(graph)
+    handle_file(graph, classes, 'classes', delimiter)
+    handle_file(graph, properties, 'properties', delimiter)
+
+    return graph
+
 
 @click.command()
 @click.argument('classes', type=click.File('r'))
 @click.argument('properties', type=click.File('r'))
 @click.option('--prefix', '-p', default=None, help='Prefix CSV File', type=click.File('r'))
 @click.option('--delimiter', '-d', default=',', help='CSV delimiter character')
-@click.option('--config', '-c', default=None, help='Config file path')
 @click.option('--output', '-o', default=sys.stdout, help='Output file', type=click.File('w'))
 @click.option('--format', '-f', default='json-ld', help='Output format')
-def csv2owl(classes, properties, prefix, delimiter, config, output, format):
-    graph = rdflib.Graph()
-    if prefix:
-        handle_prefix(prefix, delimiter)
-    setup_graph(graph, config)
-    handle_file(graph, classes, 'classes', delimiter)
-    handle_file(graph, properties, 'properties', delimiter)
+def command(classes, properties, prefix, delimiter, output, format):
+    graph = csv2owl(classes, properties, prefix, delimiter)
     print(graph.serialize(format=format, indent=4).decode('utf8'), file=output)
-    pass
 
 
 if __name__ == '__main__':
-    csv2owl()
+    command()
