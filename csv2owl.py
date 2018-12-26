@@ -79,6 +79,8 @@ def handle_file(graph, f, file_type, delimiter=','):
 
     current_value = None
     for row in type_rows:
+        if not row[0]:
+            continue
         current = get_uri(row[0])
         if file_type == 'classes':
             graph.add((current, RDF.type, OWL.Class))
@@ -96,6 +98,7 @@ def handle_file(graph, f, file_type, delimiter=','):
 
             value = get_uri(field_value, force=force_uri) or rdflib.Literal(field_value, lang=lang)
             graph.add((current, get_uri(field_names[index]), value))
+
 
 def csv2owl(classes, properties, prefix, delimiter=','):
     graph = rdflib.Graph()
