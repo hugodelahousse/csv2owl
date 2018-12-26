@@ -1,9 +1,9 @@
-import pyforms
+from pyforms.basewidget import BaseWidget
 from pyforms.controls import ControlFile, ControlButton, ControlCombo
 from csv2owl import csv2owl
 
 
-class Csv2OwlWidget(pyforms.BaseWidget):
+class Csv2OwlWidget(BaseWidget):
     def __init__(self):
         super(Csv2OwlWidget, self).__init__('csv2owl')
 
@@ -45,4 +45,5 @@ class Csv2OwlWidget(pyforms.BaseWidget):
 
 
 if __name__ == "__main__":
-    pyforms.start_app(Csv2OwlWidget)
+    from pyforms import start_app
+    start_app(Csv2OwlWidget)
