@@ -2,7 +2,8 @@
 
 import setuptools
 
-setuptools.setup(name='csv2owl',
+setuptools.setup(
+      name='csv2owl',
       version='1.0',
       description='A tool to generate owl vocabularies for csv properties and classes files',
       author='Hugo Delahousse',

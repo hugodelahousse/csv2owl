@@ -37,7 +37,6 @@ def split_namespace_value(string):
         raise UnknownNamespace(f'\'{namespace}\'')
 
 
-
 def get_uri(string, force=True):
     string = string.strip()
     if ' ' in string:
@@ -87,7 +86,9 @@ def handle_file(graph, f, file_type, delimiter=','):
             field_value = field_value.strip()
             if not field_value:
                 continue
-            force_uri = field_names[index] not in ['label', 'comment']
+
+            _, field_type = split_namespace_value(field_names[index]) or (None, None)
+            force_uri = field_type not in ['label', 'comment']
 
             lang = None
             if field_names[index][-3] == '@':
