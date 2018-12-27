@@ -12,11 +12,15 @@ DEFAULT_NAMESPACE = RDFS
 NAMESPACES = {}
 
 
-class NotMatchingNamespaceValue(Exception):
+class NotMatchingNamespaceValue(RuntimeError):
     pass
 
 
-class UnknownNamespace(Exception):
+class UnknownNamespace(RuntimeError):
+    pass
+
+
+class InvalidURI(RuntimeError):
     pass
 
 
@@ -82,6 +86,9 @@ def handle_file(graph, f, file_type, delimiter=','):
         if not row[0]:
             continue
         current = get_uri(row[0])
+        if not current:
+            raise InvalidURI(f'\'{row[0]}\'')
+
         if file_type == 'classes':
             graph.add((current, RDF.type, OWL.Class))
         for index, field_value, in enumerate(row[1:], 1):
