@@ -23,6 +23,13 @@ class UnknownNamespace(RuntimeError):
 class InvalidURI(RuntimeError):
     pass
 
+def csv_auto_reader(f, delimiter=None):
+    if delimiter:
+        return csv.reader(f, delimiter=delimiter)
+    dialect = csv.Sniffer().sniff(f.readline())
+    f.seek(0)
+    return csv.reader(f, dialect)
+
 
 def split_namespace_value(string):
     pattern = re.compile(r'\s*(?P<namespace>[^:]+):(?P<value>\w+)\s*')
@@ -64,9 +71,9 @@ def setup_graph(graph):
         graph.bind(namespace.lower(), uri)
 
 
-def handle_prefix(prefix_file, delimiter=','):
+def handle_prefix(prefix_file, delimiter=None):
     global DEFAULT_NAMESPACE
-    prefix_reader = csv.reader(prefix_file, delimiter=delimiter)
+    prefix_reader = csv_auto_reader(prefix_file, delimiter=delimiter)
 
     for row in prefix_reader:
         row = [field.strip() for field in row]
@@ -76,8 +83,8 @@ def handle_prefix(prefix_file, delimiter=','):
             DEFAULT_NAMESPACE = namespace
 
 
-def handle_file(graph, f, file_type, delimiter=','):
-    file_reader = csv.reader(f, delimiter=delimiter)
+def handle_file(graph, f, file_type, delimiter=None):
+    file_reader = csv_auto_reader(f, delimiter=delimiter)
     field_names = next(file_reader)
     type_rows = list(file_reader)
 
@@ -107,7 +114,7 @@ def handle_file(graph, f, file_type, delimiter=','):
             graph.add((current, get_uri(field_names[index]), value))
 
 
-def csv2owl(classes, properties, prefix, delimiter=','):
+def csv2owl(classes, properties, prefix, delimiter=None):
     graph = rdflib.Graph()
 
     if prefix:
